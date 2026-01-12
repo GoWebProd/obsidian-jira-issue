@@ -1,5 +1,11 @@
 import { IJiraAutocompleteDataField, IJiraFieldSchema } from "./issueInterfaces"
 
+export interface IRateLimitSettings {
+    enabled: boolean
+    delayMs: number      // Delay between requests in milliseconds
+    concurrent: number   // Number of concurrent requests (1 = sequential)
+}
+
 export enum EAuthenticationTypes {
     OPEN = 'OPEN',
     BASIC = 'BASIC',
@@ -57,6 +63,7 @@ export interface IJiraIssueAccountSettings {
     priority: number
     color: string
     use2025Api: boolean
+    rateLimit: IRateLimitSettings
     cache: {
         statusColor: Record<string, string>
         customFieldsIdToName: Record<string, string>

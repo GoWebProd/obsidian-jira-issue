@@ -2,6 +2,8 @@ import { Platform, requestUrl, RequestUrlParam, RequestUrlResponse } from 'obsid
 import { AVATAR_RESOLUTION, EAuthenticationTypes, IJiraIssueAccountSettings } from '../interfaces/settingsInterfaces'
 import { ESprintState, IJiraAutocompleteField, IJiraBoard, IJiraDevStatus, IJiraField, IJiraIssue, IJiraSearchResults, IJiraSprint, IJiraStatus, IJiraUser } from '../interfaces/issueInterfaces'
 import { SettingsData } from "../settings"
+import { RequestQueue } from "./requestQueue"
+import { exponentialBackoff, parseRetryAfter, sleep } from "../utils"
 
 interface RequestOptions {
     method: string
@@ -12,6 +14,9 @@ interface RequestOptions {
     account?: IJiraIssueAccountSettings
     noBasePath?: boolean
 }
+
+const MAX_RETRIES = 5
+const requestQueues = new Map<string, RequestQueue>()
 
 function getMimeType(imageBuffer: ArrayBuffer): string {
     const imageBufferUint8 = new Uint8Array(imageBuffer.slice(0, 4))
@@ -93,6 +98,59 @@ function isTextResponse(response: RequestUrlResponse): boolean {
     return response.headers && response.headers['content-type'] && response.headers['content-type'].includes('text') && response.text !== undefined
 }
 
+async function sendRequestWithRetry(
+    account: IJiraIssueAccountSettings,
+    requestUrlParam: RequestUrlParam,
+    attempt: number = 0
+): Promise<RequestUrlResponse> {
+    let response: RequestUrlResponse
+    let errorThrown = false
+
+    try {
+        response = await requestUrl(requestUrlParam)
+        SettingsData.logRequestsResponses && console.info('JiraIssue:Fetch:', { request: requestUrlParam, response })
+    } catch (errorResponse: any) {
+        SettingsData.logRequestsResponses && console.warn('JiraIssue:Fetch:', { request: requestUrlParam, response: errorResponse })
+        response = errorResponse
+        errorThrown = true
+
+        // Debug logging to understand the error structure
+        if (SettingsData.logRequestsResponses) {
+            console.warn('JiraIssue:Error details:', {
+                status: response?.status,
+                statusType: typeof response?.status,
+                headers: response?.headers,
+                allKeys: Object.keys(response || {}),
+            })
+        }
+    }
+
+    // Handle 429 Too Many Requests with retry
+    // Status can be a number or string, so convert to number for comparison
+    const statusCode = parseInt(response?.status?.toString() || '0')
+    if (statusCode === 429) {
+        if (attempt < MAX_RETRIES) {
+            const retryAfter = response.headers?.['retry-after']
+            const waitTime = retryAfter
+                ? parseRetryAfter(retryAfter)
+                : exponentialBackoff(attempt)
+
+            console.warn(`JiraIssue: Rate limited (429), retrying after ${waitTime}ms (attempt ${attempt + 1}/${MAX_RETRIES})`)
+            await sleep(waitTime)
+            return sendRequestWithRetry(account, requestUrlParam, attempt + 1)
+        } else {
+            console.error(`JiraIssue: Max retries (${MAX_RETRIES}) exceeded for 429 error`)
+        }
+    }
+
+    // If we got an error response but didn't retry (or retries exhausted), rethrow it
+    if (errorThrown) {
+        throw response
+    }
+
+    return response
+}
+
 async function sendRequest(requestOptions: RequestOptions): Promise<any> {
     let response: RequestUrlResponse
     if (requestOptions.account) {
@@ -129,6 +187,8 @@ async function sendRequest(requestOptions: RequestOptions): Promise<any> {
                 throw new Error(`Not Found: Issue does not exist`)
             case 410:
                 throw new Error(`Missing API: Activate the 2025 search api in the Jira Issue account settings`)
+            case 429:
+                throw new Error(`Too Many Requests: Rate limit exceeded (should have been retried)`)
             default:
                 if (isJsonResponse(response) && response.json.message) {
                     errorMsg = response.json.message
@@ -145,20 +205,67 @@ async function sendRequest(requestOptions: RequestOptions): Promise<any> {
 }
 
 async function sendRequestWithAccount(account: IJiraIssueAccountSettings, requestOptions: RequestOptions): Promise<RequestUrlResponse> {
-    let response
+    // Get or create request queue for this account
+    let queue = requestQueues.get(account.alias)
+    if (!queue && account.rateLimit?.enabled) {
+        queue = new RequestQueue({
+            delayMs: account.rateLimit.delayMs,
+            concurrent: account.rateLimit.concurrent
+        })
+        requestQueues.set(account.alias, queue)
+    }
+
     const requestUrlParam: RequestUrlParam = {
         method: requestOptions.method,
         url: buildUrl(account.host, requestOptions, account.use2025Api),
         headers: buildHeaders(account),
         contentType: 'application/json',
     }
-    try {
-        response = await requestUrl(requestUrlParam)
-        SettingsData.logRequestsResponses && console.info('JiraIssue:Fetch:', { request: requestUrlParam, response })
-    } catch (errorResponse) {
-        SettingsData.logRequestsResponses && console.warn('JiraIssue:Fetch:', { request: requestUrlParam, response: errorResponse })
-        response = errorResponse
+
+    // If rate limiting is disabled, execute directly
+    if (!queue || !account.rateLimit?.enabled) {
+        return sendRequestWithRetry(account, requestUrlParam)
     }
+
+    // Add to queue - will execute when its turn comes
+    return queue.add(() => sendRequestWithRetry(account, requestUrlParam))
+}
+
+async function preFetchImageWithRetry(
+    account: IJiraIssueAccountSettings,
+    options: RequestUrlParam,
+    attempt: number = 0
+): Promise<RequestUrlResponse> {
+    let response: RequestUrlResponse
+    let errorThrown = false
+
+    try {
+        response = await requestUrl(options)
+        SettingsData.logImagesFetch && console.info('JiraIssue:FetchImage:', { request: options, response })
+    } catch (errorResponse: any) {
+        SettingsData.logImagesFetch && console.warn('JiraIssue:FetchImage:', { request: options, response: errorResponse })
+        response = errorResponse
+        errorThrown = true
+    }
+
+    // Handle 429 Too Many Requests with retry
+    const statusCode = parseInt(response?.status?.toString() || '0')
+    if (statusCode === 429 && attempt < MAX_RETRIES) {
+        const retryAfter = response.headers?.['retry-after']
+        const waitTime = retryAfter
+            ? parseRetryAfter(retryAfter)
+            : exponentialBackoff(attempt)
+
+        console.warn(`JiraIssue: Image fetch rate limited (429), retrying after ${waitTime}ms (attempt ${attempt + 1}/${MAX_RETRIES})`)
+        await sleep(waitTime)
+        return preFetchImageWithRetry(account, options, attempt + 1)
+    }
+
+    // If we got an error response but didn't retry (or retries exhausted), rethrow it
+    if (errorThrown && statusCode !== 200) {
+        throw response
+    }
+
     return response
 }
 
@@ -168,20 +275,38 @@ async function preFetchImage(account: IJiraIssueAccountSettings, url: string): P
         return url
     }
 
-    const options = {
+    // Get or create request queue for this account
+    let queue = requestQueues.get(account.alias)
+    if (!queue && account.rateLimit?.enabled) {
+        queue = new RequestQueue({
+            delayMs: account.rateLimit.delayMs,
+            concurrent: account.rateLimit.concurrent
+        })
+        requestQueues.set(account.alias, queue)
+    }
+
+    const options: RequestUrlParam = {
         url: url,
         method: 'GET',
         headers: buildHeaders(account),
     }
-    let response: RequestUrlResponse
-    try {
-        response = await requestUrl(options)
-        SettingsData.logImagesFetch && console.info('JiraIssue:FetchImage:', { request: options, response })
-    } catch (errorResponse) {
-        SettingsData.logImagesFetch && console.warn('JiraIssue:FetchImage:', { request: options, response: errorResponse })
-        response = errorResponse
+
+    const fetchFn = () => preFetchImageWithRetry(account, options)
+
+    // If rate limiting is disabled, execute directly
+    if (!queue || !account.rateLimit?.enabled) {
+        const response = await fetchFn()
+        if (response.status === 200) {
+            const mimeType = getMimeType(response.arrayBuffer)
+            if (mimeType) {
+                return `data:${mimeType};base64,` + bufferBase64Encode(response.arrayBuffer)
+            }
+        }
+        return null
     }
 
+    // Add to queue
+    const response = await queue.add(fetchFn)
     if (response.status === 200) {
         const mimeType = getMimeType(response.arrayBuffer)
         if (mimeType) {

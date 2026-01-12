@@ -1,6 +1,6 @@
 import { App, Notice, PluginSettingTab, Setting, TextComponent } from 'obsidian'
 import JiraClient from './client/jiraClient'
-import { COLOR_SCHEMA_DESCRIPTION, EAuthenticationTypes, EColorSchema, ESearchColumnsTypes, IJiraIssueAccountSettings, IJiraIssueSettings, SEARCH_COLUMNS_DESCRIPTION } from './interfaces/settingsInterfaces'
+import { COLOR_SCHEMA_DESCRIPTION, EAuthenticationTypes, EColorSchema, ESearchColumnsTypes, IJiraIssueAccountSettings, IJiraIssueSettings, IRateLimitSettings, SEARCH_COLUMNS_DESCRIPTION } from './interfaces/settingsInterfaces'
 import JiraIssuePlugin from './main'
 import { getRandomHexColor } from './utils'
 
@@ -39,6 +39,12 @@ export const DEFAULT_SETTINGS: IJiraIssueSettings = {
     logImagesFetch: false,
 }
 
+export const DEFAULT_RATE_LIMIT: IRateLimitSettings = {
+    enabled: true,
+    delayMs: 100,      // 100ms = 10 requests/second
+    concurrent: 1,     // Sequential processing
+}
+
 export const DEFAULT_ACCOUNT: IJiraIssueAccountSettings = {
     alias: 'Default',
     host: 'https://mycompany.atlassian.net',
@@ -47,6 +53,7 @@ export const DEFAULT_ACCOUNT: IJiraIssueAccountSettings = {
     priority: 1,
     color: '#000000',
     use2025Api: false,
+    rateLimit: DEFAULT_RATE_LIMIT,
     cache: {
         statusColor: {},
         customFieldsIdToName: {},
@@ -97,6 +104,7 @@ export class JiraIssueSettingTab extends PluginSettingTab {
                         color: DEFAULT_ACCOUNT.color,
                         cache: DEFAULT_ACCOUNT.cache,
                         use2025Api: false,
+                        rateLimit: DEFAULT_RATE_LIMIT,
                     }
                 ]
             } else {
@@ -385,6 +393,37 @@ export class JiraIssueSettingTab extends PluginSettingTab {
                 .onChange(async value => {
                     newAccount.use2025Api = value
                     await this.saveSettings()
+                }))
+
+        containerEl.createEl('h3', { text: 'Rate Limiting' })
+
+        new Setting(containerEl)
+            .setName('Enable request queue')
+            .setDesc('Enable request queue to avoid 429 errors from Jira API. Requests are executed sequentially with a fixed delay between them.')
+            .addToggle(toggle => toggle
+                .setValue(newAccount.rateLimit.enabled)
+                .onChange(async value => {
+                    newAccount.rateLimit.enabled = value
+                }))
+
+        new Setting(containerEl)
+            .setName('Delay between requests')
+            .setDesc('Delay in milliseconds between consecutive requests (e.g., 100 = 10 req/sec, 500 = 2 req/sec, 1000 = 1 req/sec).')
+            .addText(text => text
+                .setPlaceholder('100')
+                .setValue(newAccount.rateLimit.delayMs.toString())
+                .onChange(async value => {
+                    newAccount.rateLimit.delayMs = parseInt(value) || DEFAULT_RATE_LIMIT.delayMs
+                }))
+
+        new Setting(containerEl)
+            .setName('Concurrent requests')
+            .setDesc('Number of requests that can be processed simultaneously. Use 1 for strict sequential processing.')
+            .addText(text => text
+                .setPlaceholder('1')
+                .setValue(newAccount.rateLimit.concurrent.toString())
+                .onChange(async value => {
+                    newAccount.rateLimit.concurrent = Math.max(1, parseInt(value) || DEFAULT_RATE_LIMIT.concurrent)
                 }))
 
         new Setting(containerEl)

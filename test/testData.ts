@@ -1,4 +1,5 @@
 import { IJiraAutocompleteDataField } from "../src/interfaces/issueInterfaces"
+import { DEFAULT_RATE_LIMIT } from "../src/settings"
 import { EAuthenticationTypes } from "../src/interfaces/settingsInterfaces"
 
 const kEmptyAccountCache = {
@@ -19,6 +20,7 @@ export const TestAccountOpen = {
     priority: 1,
     color: '#123456',
     use2025Api: false,
+    rateLimit: DEFAULT_RATE_LIMIT,
     cache: kEmptyAccountCache,
 }
 
@@ -31,5 +33,6 @@ export const TestAccountBasic = {
     priority: 2,
     color: '#789012',
     use2025Api: false,
+    rateLimit: DEFAULT_RATE_LIMIT,
     cache: kEmptyAccountCache,
 }

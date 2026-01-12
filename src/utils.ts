@@ -33,3 +33,26 @@ export function getRandomHexColor(): string {
 export function getRandomRGBColor(): { r: number, g: number, b: number } {
     return colorsys.hslToRgb(randomBetween(0, 359), randomBetween(40, 100), randomBetween(45, 75))
 }
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export function exponentialBackoff(attempt: number): number {
+    return Math.min(1000 * Math.pow(2, attempt), 30000) // max 30s
+}
+
+export function parseRetryAfter(header: string): number {
+    // Retry-After can be a number of seconds or an HTTP-date
+    const seconds = parseInt(header)
+    if (!isNaN(seconds)) {
+        return seconds * 1000
+    }
+
+    const date = new Date(header)
+    if (!isNaN(date.getTime())) {
+        return Math.max(0, date.getTime() - Date.now())
+    }
+
+    return 1000 // fallback 1s
+}
