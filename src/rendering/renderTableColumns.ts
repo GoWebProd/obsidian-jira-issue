@@ -5,6 +5,7 @@ import * as jsonpath from 'jsonpath'
 import ObjectsCache from "../objectsCache"
 import JiraClient from "../client/jiraClient"
 import { AVATAR_RESOLUTION, ESearchColumnsTypes, ISearchColumn } from "../interfaces/settingsInterfaces"
+import { attachIssueClickHandler } from "./issueClickHandler"
 
 const DESCRIPTION_COMPACT_MAX_LENGTH = 20
 
@@ -41,13 +42,14 @@ export const renderTableColumn = async (columns: ISearchColumn[], issue: IJiraIs
     for (const column of columns) {
         switch (column.type) {
             case ESearchColumnsTypes.KEY:
-                createEl('a', {
+                const keyLink = createEl('a', {
                     cls: 'no-wrap',
                     href: RC.issueUrl(issue.account, issue.key),
                     text: column.compact ? '🔗' : issue.key,
                     title: column.compact ? issue.key : RC.issueUrl(issue.account, issue.key),
                     parent: createEl('td', { parent: row })
                 })
+                attachIssueClickHandler(keyLink, issue)
                 break
             case ESearchColumnsTypes.SUMMARY:
                 if (column.compact) {

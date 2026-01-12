@@ -1,3 +1,10 @@
+jest.mock('obsidian', () => ({
+    Modal: class MockModal {
+        constructor() {}
+        open() {}
+        close() {}
+    }
+}), { virtual: true })
 jest.mock('../src/main', () => {
     return { ObsidianApp: { vault: { getConfig: jest.fn() } } }
 })

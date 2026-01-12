@@ -32,6 +32,22 @@
 
 .jira-issue-container .issue-summary {
     flex-grow: 1;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.jira-issue-container .ji-summary-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.jira-issue-container .ji-label-badge {
+    font-size: 0.65em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--background-modifier-border);
 }
 
 .jira-issue-container a:hover {
@@ -525,4 +541,215 @@ svg.svg-icon.jira-issue-visible {
 svg.svg-icon.jira-issue-hidden {
     stroke: none;
     fill: currentColor;
+}
+
+/* Issue Detail Modal */
+.jira-issue-detail-modal {
+    max-width: 800px;
+}
+
+.jira-issue-detail-modal .modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.jira-modal-header {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 16px;
+}
+
+.jira-modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.jira-modal-type-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.jira-modal-key {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-accent);
+    text-decoration: none;
+}
+
+.jira-modal-key:hover {
+    text-decoration: underline;
+}
+
+.jira-modal-summary {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+.jira-modal-content-wrapper {
+    display: flex;
+    gap: 24px;
+}
+
+.jira-modal-main {
+    flex: 2;
+    min-width: 0;
+}
+
+.jira-modal-sidebar {
+    flex: 1;
+    min-width: 180px;
+}
+
+.jira-modal-section {
+    margin-bottom: 20px;
+}
+
+.jira-modal-section h3 {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 8px 0;
+}
+
+.jira-modal-description {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.jira-modal-field {
+    margin-bottom: 12px;
+}
+
+.jira-modal-field-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.jira-modal-field-value {
+    font-size: 14px;
+}
+
+.jira-modal-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.jira-modal-user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+}
+
+.jira-modal-unassigned {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.jira-modal-priority {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.jira-modal-priority-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.jira-modal-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.jira-modal-label {
+    background: var(--background-secondary);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.jira-modal-version-released {
+    font-weight: 600;
+}
+
+.jira-modal-time-tracking {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+}
+
+.jira-modal-progress-bar {
+    height: 6px;
+    background: var(--background-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.jira-modal-progress-fill {
+    height: 100%;
+    background: var(--interactive-accent);
+    transition: width 0.3s;
+}
+
+.jira-modal-issue-link {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 14px;
+}
+
+.jira-modal-link-type {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.jira-modal-link-summary {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.jira-modal-footer {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.jira-modal-open-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.jira-modal-open-button:hover {
+    opacity: 0.9;
+    text-decoration: none;
+}
+
+@media (max-width: 600px) {
+    .jira-modal-content-wrapper {
+        flex-direction: column;
+    }
+
+    .jira-modal-sidebar {
+        min-width: 100%;
+    }
 }

@@ -4,6 +4,7 @@ import { EColorSchema, IJiraIssueAccountSettings } from "../interfaces/settingsI
 import { ObsidianApp } from "../main"
 import { SearchView } from "../searchView"
 import { SettingsData } from "../settings"
+import { attachIssueClickHandler } from "./issueClickHandler"
 
 export const JIRA_STATUS_COLOR_MAP: Record<string, string> = {
     'blue-gray': 'is-info',
@@ -115,9 +116,19 @@ export default {
                 parent: createSpan({ cls: `ji-tag ${this.getTheme()} ji-sm-tag`, parent: tagsRow })
             })
         }
-        createEl('a', { cls: `ji-tag is-link ${this.getTheme()} no-wrap`, href: this.issueUrl(issue.account, issue.key), title: this.issueUrl(issue.account, issue.key), text: issue.key, parent: tagsRow })
+        const keyLink = createEl('a', { cls: `ji-tag is-link ${this.getTheme()} no-wrap`, href: this.issueUrl(issue.account, issue.key), title: this.issueUrl(issue.account, issue.key), text: issue.key, parent: tagsRow })
+        attachIssueClickHandler(keyLink, issue)
         if (!compact) {
-            createSpan({ cls: `ji-tag ${this.getTheme()} issue-summary`, text: issue.fields.summary, parent: tagsRow })
+            const summaryTag = createSpan({ cls: `ji-tag ${this.getTheme()} issue-summary`, parent: tagsRow })
+            createDiv({ cls: 'ji-summary-text', text: issue.fields.summary, parent: summaryTag })
+
+            // Labels under summary
+            if (issue.fields.labels?.length > 0) {
+                const labelsRow = createDiv({ cls: 'ji-summary-labels', parent: summaryTag })
+                for (const label of issue.fields.labels) {
+                    createSpan({ cls: 'ji-label-badge', text: label, parent: labelsRow })
+                }
+            }
         }
         const statusColor = JIRA_STATUS_COLOR_MAP_BY_NAME[issue.fields.status.name] ||
             JIRA_STATUS_COLOR_MAP[issue.fields.status.statusCategory.colorName] ||
