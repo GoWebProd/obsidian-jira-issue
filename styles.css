@@ -753,3 +753,29 @@ svg.svg-icon.jira-issue-hidden {
         min-width: 100%;
     }
 }
+
+/* Label Management Modal */
+.jira-label-modal {
+    max-width: 400px;
+}
+
+.jira-label-modal h2 {
+    margin-bottom: 16px;
+}
+
+.jira-label-modal-empty {
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 16px;
+}
+
+.jira-label-checkboxes {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.jira-label-checkboxes .setting-item {
+    border-top: none;
+    padding: 8px 0;
+}

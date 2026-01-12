@@ -22,6 +22,7 @@ export const TestAccountOpen = {
     use2025Api: false,
     rateLimit: DEFAULT_RATE_LIMIT,
     cache: kEmptyAccountCache,
+    predefinedLabels: [] as string[],
 }
 
 export const TestAccountBasic = {
@@ -35,4 +36,5 @@ export const TestAccountBasic = {
     use2025Api: false,
     rateLimit: DEFAULT_RATE_LIMIT,
     cache: kEmptyAccountCache,
+    predefinedLabels: [] as string[],
 }

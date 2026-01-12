@@ -70,9 +70,13 @@ describe('Settings', () => {
         expect(pluginMock.saveData).toBeCalledTimes(0)
         expect(SettingsData).toEqual({
             ...StoredSettings,
+            batchDelayMs: DEFAULT_SETTINGS.batchDelayMs,
+            debugBatching: DEFAULT_SETTINGS.debugBatching,
             accounts: [{
                 ...StoredSettings.accounts[0],
                 priority: 1,
+                rateLimit: DEFAULT_ACCOUNT.rateLimit,
+                predefinedLabels: DEFAULT_ACCOUNT.predefinedLabels,
                 "cache": {
                     "customFieldsIdToName": {},
                     "customFieldsNameToId": {},

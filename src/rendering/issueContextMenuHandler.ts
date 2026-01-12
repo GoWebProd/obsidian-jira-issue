@@ -1,0 +1,40 @@
+import { Menu } from "obsidian"
+import { IJiraIssue } from "../interfaces/issueInterfaces"
+import { LabelManagementModal } from "../modals/labelManagementModal"
+
+/**
+ * Attaches a context menu (right-click) handler to an issue element.
+ * Shows menu with "Add labels" and "Remove labels" options.
+ */
+export function attachIssueContextMenuHandler(
+    element: HTMLElement,
+    issue: IJiraIssue,
+    onIssueUpdated: (issue: IJiraIssue) => void
+): void {
+    element.addEventListener('contextmenu', (event: MouseEvent) => {
+        event.preventDefault()
+        event.stopPropagation()
+
+        const menu = new Menu()
+
+        menu.addItem(item => item
+            .setTitle('Add labels')
+            .setIcon('tag')
+            .onClick(() => {
+                new LabelManagementModal(issue, 'add', onIssueUpdated).open()
+            })
+        )
+
+        if (issue.fields.labels && issue.fields.labels.length > 0) {
+            menu.addItem(item => item
+                .setTitle('Remove labels')
+                .setIcon('x')
+                .onClick(() => {
+                    new LabelManagementModal(issue, 'remove', onIssueUpdated).open()
+                })
+            )
+        }
+
+        menu.showAtMouseEvent(event)
+    })
+}

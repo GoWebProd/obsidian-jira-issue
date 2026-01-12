@@ -5,6 +5,7 @@ import { ObsidianApp } from "../main"
 import { SearchView } from "../searchView"
 import { SettingsData } from "../settings"
 import { attachIssueClickHandler } from "./issueClickHandler"
+import { attachIssueContextMenuHandler } from "./issueContextMenuHandler"
 
 export const JIRA_STATUS_COLOR_MAP: Record<string, string> = {
     'blue-gray': 'is-info',
@@ -105,7 +106,7 @@ export default {
         el.replaceChildren(this.renderContainer([tagsRow]))
     },
 
-    renderIssue(issue: IJiraIssue, compact = false): HTMLElement {
+    renderIssue(issue: IJiraIssue, compact = false, onIssueUpdated?: (issue: IJiraIssue) => void): HTMLElement {
         const tagsRow = createDiv('ji-tags has-addons')
         this.renderAccountColorBand(issue.account, tagsRow)
         if (issue.fields.issuetype.iconUrl) {
@@ -166,6 +167,11 @@ export default {
                 text: 'Unassigned',
                 parent: assigneeTag
             })
+        }
+
+        // Attach context menu handler if callback is provided
+        if (onIssueUpdated) {
+            attachIssueContextMenuHandler(tagsRow, issue, onIssueUpdated)
         }
 
         return tagsRow

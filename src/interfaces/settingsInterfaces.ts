@@ -78,6 +78,7 @@ export interface IJiraIssueAccountSettings {
             }
         }
     }
+    predefinedLabels: string[]
 }
 
 export enum ESearchResultsRenderingTypes {

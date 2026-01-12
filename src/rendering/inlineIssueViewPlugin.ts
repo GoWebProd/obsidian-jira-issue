@@ -45,12 +45,17 @@ class InlineIssueWidget extends WidgetType {
     }
 
     buildTag() {
+        // Recursive callback for re-rendering after issue update
+        const onIssueUpdated = (updatedIssue: IJiraIssue) => {
+            this._htmlContainer.replaceChildren(RC.renderIssue(updatedIssue, this._compact, onIssueUpdated))
+        }
+
         const cachedIssue = ObjectsCache.get(this._issueKey)
         if (cachedIssue) {
             if (cachedIssue.isError) {
                 this._htmlContainer.replaceChildren(RC.renderIssueError(this._issueKey, cachedIssue.data as string))
             } else {
-                this._htmlContainer.replaceChildren(RC.renderIssue(cachedIssue.data as IJiraIssue, this._compact))
+                this._htmlContainer.replaceChildren(RC.renderIssue(cachedIssue.data as IJiraIssue, this._compact, onIssueUpdated))
             }
         } else {
             this._htmlContainer.replaceChildren(RC.renderLoadingItem(this._issueKey))
@@ -58,7 +63,7 @@ class InlineIssueWidget extends WidgetType {
                 compact: this._compact,
                 account: getAccountByHost(this._host),
                 onSuccess: (issue) => {
-                    this._htmlContainer.replaceChildren(RC.renderIssue(issue, this._compact))
+                    this._htmlContainer.replaceChildren(RC.renderIssue(issue, this._compact, onIssueUpdated))
                 },
                 onError: (err) => {
                     this._htmlContainer.replaceChildren(RC.renderIssueError(this._issueKey, err))

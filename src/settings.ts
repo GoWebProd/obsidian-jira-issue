@@ -66,6 +66,7 @@ export const DEFAULT_ACCOUNT: IJiraIssueAccountSettings = {
             functions: {},
         },
     },
+    predefinedLabels: [],
 }
 
 function deepCopy(obj: any): any {
@@ -107,6 +108,7 @@ export class JiraIssueSettingTab extends PluginSettingTab {
                         cache: DEFAULT_ACCOUNT.cache,
                         use2025Api: false,
                         rateLimit: DEFAULT_RATE_LIMIT,
+                        predefinedLabels: [],
                     }
                 ]
             } else {
@@ -426,6 +428,44 @@ export class JiraIssueSettingTab extends PluginSettingTab {
                 .setValue(newAccount.rateLimit.concurrent.toString())
                 .onChange(async value => {
                     newAccount.rateLimit.concurrent = Math.max(1, parseInt(value) || DEFAULT_RATE_LIMIT.concurrent)
+                }))
+
+        containerEl.createEl('h3', { text: 'Predefined Labels' })
+        containerEl.createEl('p', { text: 'Labels available in the context menu for quick assignment.', cls: 'setting-item-description' })
+
+        // Display existing predefined labels
+        if (!newAccount.predefinedLabels) {
+            newAccount.predefinedLabels = []
+        }
+        for (let i = 0; i < newAccount.predefinedLabels.length; i++) {
+            const label = newAccount.predefinedLabels[i]
+            new Setting(containerEl)
+                .setName(label)
+                .addExtraButton(button => button
+                    .setIcon('trash')
+                    .setTooltip('Remove label')
+                    .onClick(async () => {
+                        newAccount.predefinedLabels.splice(i, 1)
+                        this.displayModifyAccountPage(prevAccount, newAccount)
+                    }))
+        }
+
+        // Add new label input
+        let newLabelInput: TextComponent = null
+        new Setting(containerEl)
+            .setName('Add new label')
+            .addText(text => {
+                newLabelInput = text
+                text.setPlaceholder('Enter label name')
+            })
+            .addButton(button => button
+                .setButtonText('Add')
+                .onClick(async () => {
+                    const labelName = newLabelInput.getValue().trim()
+                    if (labelName && !newAccount.predefinedLabels.includes(labelName)) {
+                        newAccount.predefinedLabels.push(labelName)
+                        this.displayModifyAccountPage(prevAccount, newAccount)
+                    }
                 }))
 
         new Setting(containerEl)

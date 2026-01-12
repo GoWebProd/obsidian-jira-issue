@@ -13,6 +13,7 @@ interface RequestOptions {
     queryParameters2025?: URLSearchParams
     account?: IJiraIssueAccountSettings
     noBasePath?: boolean
+    body?: Record<string, unknown>
 }
 
 const MAX_RETRIES = 5
@@ -156,6 +157,10 @@ async function sendRequest(requestOptions: RequestOptions): Promise<any> {
     if (requestOptions.account) {
         response = await sendRequestWithAccount(requestOptions.account, requestOptions)
 
+        if (response.status === 204) {
+            // Success with no content (e.g., PUT/DELETE operations)
+            return { account: requestOptions.account }
+        }
         if (response.status === 200 && isJsonResponse(response)) {
             return { ...response.json, account: requestOptions.account }
         }
@@ -164,6 +169,10 @@ async function sendRequest(requestOptions: RequestOptions): Promise<any> {
             const account = SettingsData.accounts[i]
             response = await sendRequestWithAccount(account, requestOptions)
 
+            if (response.status === 204) {
+                // Success with no content (e.g., PUT/DELETE operations)
+                return { account: account }
+            }
             if (response.status === 200 && isJsonResponse(response)) {
                 return { ...response.json, account: account }
             } else if (Math.floor(response.status / 100) !== 4) {
@@ -220,6 +229,7 @@ async function sendRequestWithAccount(account: IJiraIssueAccountSettings, reques
         url: buildUrl(account.host, requestOptions, account.use2025Api),
         headers: buildHeaders(account),
         contentType: 'application/json',
+        body: requestOptions.body ? JSON.stringify(requestOptions.body) : undefined,
     }
 
     // If rate limiting is disabled, execute directly
@@ -569,6 +579,21 @@ export default {
                 path: `/rest/agile/1.0/sprint/${sprintId}`,
                 noBasePath: true,
                 account: opt.account,
+            }
+        )
+    },
+
+    async updateIssueLabels(issueKey: string, labels: string[], options: { account?: IJiraIssueAccountSettings } = {}): Promise<void> {
+        await sendRequest(
+            {
+                method: 'PUT',
+                path: `/issue/${issueKey}`,
+                account: options.account || null,
+                body: {
+                    fields: {
+                        labels: labels
+                    }
+                }
             }
         )
     },

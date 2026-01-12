@@ -48,19 +48,25 @@ export const InlineIssueRenderer = async (el: HTMLElement, ctx: MarkdownPostProc
     inlineIssueTags.forEach((value: HTMLSpanElement) => {
         const issueKey = value.getAttribute('data-issue-key')
         const compact = value.getAttribute('data-compact') === 'true'
+
+        // Recursive callback for re-rendering after issue update
+        const onIssueUpdated = (updatedIssue: IJiraIssue) => {
+            value.replaceChildren(RC.renderIssue(updatedIssue, compact, onIssueUpdated))
+        }
+
         const cachedIssue = ObjectsCache.get(issueKey)
         if (cachedIssue) {
             if (cachedIssue.isError) {
                 value.replaceChildren(RC.renderIssueError(issueKey, cachedIssue.data as string))
             } else {
-                value.replaceChildren(RC.renderIssue(cachedIssue.data as IJiraIssue, compact))
+                value.replaceChildren(RC.renderIssue(cachedIssue.data as IJiraIssue, compact, onIssueUpdated))
             }
         } else {
             value.replaceChildren(RC.renderLoadingItem(issueKey))
             batchManager.registerIssue(issueKey, {
                 compact,
                 onSuccess: (issue) => {
-                    value.replaceChildren(RC.renderIssue(issue, compact))
+                    value.replaceChildren(RC.renderIssue(issue, compact, onIssueUpdated))
                 },
                 onError: (err) => {
                     value.replaceChildren(RC.renderIssueError(issueKey, err))
