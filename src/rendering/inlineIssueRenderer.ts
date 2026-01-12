@@ -5,6 +5,7 @@ import { COMPACT_SYMBOL, JIRA_KEY_REGEX } from "../interfaces/settingsInterfaces
 import ObjectsCache from "../objectsCache"
 import { SettingsData } from "../settings"
 import RC from "./renderingCommon"
+import { getGlobalBatchManager } from "../batching/issueBatchManager"
 
 // TODO: support explicit account selection in inline issues
 
@@ -42,6 +43,7 @@ export const InlineIssueRenderer = async (el: HTMLElement, ctx: MarkdownPostProc
     convertInlineIssuesToTags(el)
     convertInlineIssuesUrlToTags(el)
 
+    const batchManager = getGlobalBatchManager()
     const inlineIssueTags: NodeListOf<HTMLSpanElement> = el.querySelectorAll(`span.ji-inline-issue`)
     inlineIssueTags.forEach((value: HTMLSpanElement) => {
         const issueKey = value.getAttribute('data-issue-key')
@@ -55,12 +57,14 @@ export const InlineIssueRenderer = async (el: HTMLElement, ctx: MarkdownPostProc
             }
         } else {
             value.replaceChildren(RC.renderLoadingItem(issueKey))
-            JiraClient.getIssue(issueKey).then(newIssue => {
-                const issue = ObjectsCache.add(issueKey, newIssue).data as IJiraIssue
-                value.replaceChildren(RC.renderIssue(issue, compact))
-            }).catch(err => {
-                ObjectsCache.add(issueKey, err, true)
-                value.replaceChildren(RC.renderIssueError(issueKey, err))
+            batchManager.registerIssue(issueKey, {
+                compact,
+                onSuccess: (issue) => {
+                    value.replaceChildren(RC.renderIssue(issue, compact))
+                },
+                onError: (err) => {
+                    value.replaceChildren(RC.renderIssueError(issueKey, err))
+                }
             })
         }
     })

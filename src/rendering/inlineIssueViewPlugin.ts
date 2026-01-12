@@ -9,6 +9,7 @@ import RC from "./renderingCommon"
 import escapeStringRegexp from 'escape-string-regexp'
 import { getAccountByHost } from "../utils"
 import { COMPACT_SYMBOL, JIRA_KEY_REGEX } from "../interfaces/settingsInterfaces"
+import { getGlobalBatchManager } from "../batching/issueBatchManager"
 
 interface IMatchDecoratorRef {
     ref: MatchDecorator
@@ -53,12 +54,15 @@ class InlineIssueWidget extends WidgetType {
             }
         } else {
             this._htmlContainer.replaceChildren(RC.renderLoadingItem(this._issueKey))
-            JiraClient.getIssue(this._issueKey, { account: getAccountByHost(this._host) }).then(newIssue => {
-                const issue = ObjectsCache.add(this._issueKey, newIssue).data as IJiraIssue
-                this._htmlContainer.replaceChildren(RC.renderIssue(issue, this._compact))
-            }).catch(err => {
-                ObjectsCache.add(this._issueKey, err, true)
-                this._htmlContainer.replaceChildren(RC.renderIssueError(this._issueKey, err))
+            getGlobalBatchManager().registerIssue(this._issueKey, {
+                compact: this._compact,
+                account: getAccountByHost(this._host),
+                onSuccess: (issue) => {
+                    this._htmlContainer.replaceChildren(RC.renderIssue(issue, this._compact))
+                },
+                onError: (err) => {
+                    this._htmlContainer.replaceChildren(RC.renderIssueError(this._issueKey, err))
+                }
             })
         }
     }

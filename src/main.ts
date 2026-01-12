@@ -12,6 +12,7 @@ import { ViewPluginManager } from './rendering/inlineIssueViewPlugin'
 import { QuerySuggest } from './suggestions/querySuggest'
 import { setupIcons } from './icons/icons'
 import API from './api/api'
+import { getGlobalBatchManager } from './batching/issueBatchManager'
 
 // TODO: text on mobile and implement horizontal scrolling
 
@@ -96,6 +97,7 @@ export default class JiraIssuePlugin extends Plugin {
     }
 
     onunload() {
+        getGlobalBatchManager().cancel()
         this._settingTab = null
         this._columnsSuggest = null
         this._inlineIssueViewPlugin = null

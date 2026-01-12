@@ -44,6 +44,8 @@ export interface IJiraIssueSettings {
     logImagesFetch: boolean
     showColorBand: boolean
     showJiraLink: boolean
+    batchDelayMs: number
+    debugBatching: boolean
 
     // Legacy credentials
     host?: string

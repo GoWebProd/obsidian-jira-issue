@@ -37,6 +37,8 @@ export const DEFAULT_SETTINGS: IJiraIssueSettings = {
     ],
     logRequestsResponses: false,
     logImagesFetch: false,
+    batchDelayMs: 150,
+    debugBatching: false,
 }
 
 export const DEFAULT_RATE_LIMIT: IRateLimitSettings = {
@@ -671,6 +673,25 @@ export class JiraIssueSettingTab extends PluginSettingTab {
                 .setValue(SettingsData.logImagesFetch)
                 .onChange(async value => {
                     SettingsData.logImagesFetch = value
+                    await this.saveSettings()
+                }))
+        new Setting(containerEl)
+            .setName('Debug batch requests')
+            .setDesc('Log batch request operations in the console (CTRL+Shift+I). Shows JQL queries, cache hits/misses, and fetch results.')
+            .addToggle(toggle => toggle
+                .setValue(SettingsData.debugBatching)
+                .onChange(async value => {
+                    SettingsData.debugBatching = value
+                    await this.saveSettings()
+                }))
+        new Setting(containerEl)
+            .setName('Batch delay (ms)')
+            .setDesc('Delay in milliseconds before executing batch request. Higher values collect more issues but increase perceived latency. Minimum: 50ms.')
+            .addText(text => text
+                .setValue(SettingsData.batchDelayMs.toString())
+                .onChange(async value => {
+                    const numValue = parseInt(value)
+                    SettingsData.batchDelayMs = isNaN(numValue) ? 150 : Math.max(50, numValue)
                     await this.saveSettings()
                 }))
     }
