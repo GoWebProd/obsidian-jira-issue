@@ -1,6 +1,7 @@
 import { Menu } from "obsidian"
 import { IJiraIssue } from "../interfaces/issueInterfaces"
 import { LabelManagementModal } from "../modals/labelManagementModal"
+import { PriorityModal } from "../modals/priorityModal"
 
 /**
  * Attaches a context menu (right-click) handler to an issue element.
@@ -34,6 +35,16 @@ export function attachIssueContextMenuHandler(
                 })
             )
         }
+
+        menu.addSeparator()
+
+        menu.addItem(item => item
+            .setTitle('Change priority')
+            .setIcon('signal')
+            .onClick(() => {
+                new PriorityModal(issue, onIssueUpdated).open()
+            })
+        )
 
         menu.showAtMouseEvent(event)
     })

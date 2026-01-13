@@ -121,6 +121,13 @@ export interface IJiraStatus {
     }
 }
 
+export interface IJiraPriority {
+    id: string
+    name: string
+    iconUrl: string
+    description?: string
+}
+
 export interface IJiraField {
     custom: boolean
     id: string

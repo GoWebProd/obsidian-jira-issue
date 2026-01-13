@@ -779,3 +779,64 @@ svg.svg-icon.jira-issue-hidden {
     border-top: none;
     padding: 8px 0;
 }
+
+/* Priority Modal */
+.jira-priority-modal {
+    max-width: 400px;
+}
+
+.jira-priority-modal h2 {
+    margin-bottom: 16px;
+}
+
+.jira-priority-modal-empty {
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 16px;
+}
+
+.jira-priority-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.jira-priority-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.jira-priority-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.jira-priority-item.is-current {
+    background-color: var(--background-modifier-active-hover);
+}
+
+.jira-priority-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.jira-priority-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.jira-priority-label input[type="radio"] {
+    margin: 0;
+}
+
+.jira-priority-current-tag {
+    color: var(--text-muted);
+    font-size: 0.85em;
+}

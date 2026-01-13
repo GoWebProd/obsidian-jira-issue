@@ -1,6 +1,6 @@
 import { Platform, requestUrl, RequestUrlParam, RequestUrlResponse } from 'obsidian'
 import { AVATAR_RESOLUTION, EAuthenticationTypes, IJiraIssueAccountSettings } from '../interfaces/settingsInterfaces'
-import { ESprintState, IJiraAutocompleteField, IJiraBoard, IJiraDevStatus, IJiraField, IJiraIssue, IJiraSearchResults, IJiraSprint, IJiraStatus, IJiraUser } from '../interfaces/issueInterfaces'
+import { ESprintState, IJiraAutocompleteField, IJiraBoard, IJiraDevStatus, IJiraField, IJiraIssue, IJiraPriority, IJiraSearchResults, IJiraSprint, IJiraStatus, IJiraUser } from '../interfaces/issueInterfaces'
 import { SettingsData } from "../settings"
 import { RequestQueue } from "./requestQueue"
 import { exponentialBackoff, parseRetryAfter, sleep } from "../utils"
@@ -592,6 +592,38 @@ export default {
                 body: {
                     fields: {
                         labels: labels
+                    }
+                }
+            }
+        )
+    },
+
+    async getIssuePriorities(issueKey: string, options: { account?: IJiraIssueAccountSettings } = {}): Promise<IJiraPriority[]> {
+        const response = await sendRequest(
+            {
+                method: 'GET',
+                path: `/issue/${issueKey}/editmeta`,
+                account: options.account || null,
+            }
+        )
+        console.log('editmeta response:', response)
+        // Extract allowed priorities from editmeta response
+        const priorityField = response.fields?.priority
+        if (priorityField?.allowedValues) {
+            return priorityField.allowedValues as IJiraPriority[]
+        }
+        return []
+    },
+
+    async updateIssuePriority(issueKey: string, priorityId: string, options: { account?: IJiraIssueAccountSettings } = {}): Promise<void> {
+        await sendRequest(
+            {
+                method: 'PUT',
+                path: `/issue/${issueKey}`,
+                account: options.account || null,
+                body: {
+                    fields: {
+                        priority: { id: priorityId }
                     }
                 }
             }
