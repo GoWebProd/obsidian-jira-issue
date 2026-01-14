@@ -124,12 +124,13 @@ const config = {
     }),
     plugins: [],
     themes: [
-      [
-        require.resolve("@easyops-cn/docusaurus-search-local"),
-        {
-          hashed: true,
-        },
-      ],
+      // Temporarily disabled due to Node.js v24 compatibility issues
+      // [
+      //   require.resolve("@easyops-cn/docusaurus-search-local"),
+      //   {
+      //     hashed: true,
+      //   },
+      // ],
     ],
 }
 
