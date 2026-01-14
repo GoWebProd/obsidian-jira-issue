@@ -10,6 +10,7 @@ The plugin provides a set of commands to insert a template of each component in 
 - Insert issue template
 - Insert search template
 - Insert count template
+- Insert kanban template
 
 ## Clear cache
 

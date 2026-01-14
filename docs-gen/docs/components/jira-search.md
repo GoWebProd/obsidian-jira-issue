@@ -120,3 +120,58 @@ At the bottom of each search table you have several information:
 - Refresh results button
 
 ![searchFooter](/img/searchFooter.png)
+
+## Interactive Features
+
+Issues displayed in `jira-search` tables and lists support full interactivity for managing issues directly from Obsidian.
+
+### Click to View Details
+
+Click on any issue key in the search results to open the **Issue Detail Modal** with comprehensive information including:
+- Full description
+- Linked issues with relationship types
+- All fields (status, priority, assignee, reporter, dates, labels, components, fix versions)
+- Sprint information (sorted with active sprints first, with state indicators)
+- Time tracking with visual progress bar
+- "Open in Jira" button for quick browser access
+
+Hold Cmd/Ctrl while clicking to open the issue in Jira directly, bypassing the modal.
+
+See [Inline Issue - Click to View Details](./inline-issue.md#click-to-view-details) for full modal documentation.
+
+### Right-Click Context Menu
+
+Right-click on any issue row (TABLE mode) or issue card (LIST mode) to access quick actions:
+
+- **Add labels** - Select from predefined labels configured in settings
+- **Remove labels** - Remove existing labels from the issue
+- **Change priority** - Update issue priority with visual icons
+- **Change assignee** - Assign to predefined users or search for anyone in Jira
+
+All changes are:
+1. Immediately sent to Jira via API
+2. Cached locally for performance
+3. Re-rendered in the table/list
+
+### Visual Enhancements
+
+Search results now display:
+- **Priority icons** - Visual indicators for issue priority levels
+- **Issue type icons** - Story, Task, Bug, Epic, etc.
+- **Assignee avatars** - User avatars in assignee columns
+- **Color-coded statuses** - Status badges with colors matching Jira categories
+
+### Configuration for Quick Actions
+
+To enable predefined labels and assignees for faster workflow:
+
+1. Go to Settings → Jira Issue → [Your Account]
+2. **Predefined Labels** section:
+   - Add frequently used labels (e.g., "urgent", "backend", "ui-bug")
+   - These appear in the "Add labels" context menu
+3. **Predefined Assignees** section:
+   - Search for team members in Jira
+   - Click "Add" to save them as quick-access presets
+   - Predefined assignees appear first in the assignee modal with avatars
+
+See [Inline Issue - Interactive Features](./inline-issue.md#interactive-features) for detailed workflows on label management, priority updates, and assignee search.

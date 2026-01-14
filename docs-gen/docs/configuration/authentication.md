@@ -80,6 +80,100 @@ To help identify the Jira account used by each tag, it is possible to associate 
 
 ![inlineIssues](/img/color-band.png)
 
+## Predefined Labels
+
+Predefined labels enable quick label management via the right-click context menu on any issue. Instead of typing labels each time, you can select from a preset list.
+
+**Location**: Settings → Jira Issue → [Account Name] → Labels
+
+### Adding Predefined Labels
+
+1. Navigate to your account settings
+2. Find the "Predefined Labels" section
+3. Enter a label name in the text input field
+4. Click "Add" or press Enter
+5. The label appears in the list below
+
+**Example labels:**
+- `urgent`
+- `backend`
+- `ui-bug`
+- `needs-review`
+- `technical-debt`
+
+### Using Predefined Labels
+
+1. Right-click on any issue (inline, fence block, search result, kanban card)
+2. Select "Add labels" from the context menu
+3. Modal shows all predefined labels
+4. Labels already on the issue are disabled to prevent duplicates
+5. Select labels and click "Add Selected"
+6. Changes sync to Jira and update the display immediately
+
+![Predefined Labels Settings](/img/predefined-labels-settings.png)
+
+### Removing Predefined Labels
+
+Click the "✕" button next to any label in the settings to remove it from the predefined list. This only removes it from quick access—it doesn't affect existing issues.
+
+**Note:** Labels are case-sensitive in Jira. `Backend` and `backend` are different labels.
+
+## Predefined Assignees
+
+Predefined assignees provide quick access to frequently assigned team members when changing issue assignees. Instead of searching for users each time, you can select from presets with avatars.
+
+**Location**: Settings → Jira Issue → [Account Name] → Assignees
+
+### Adding Predefined Assignees
+
+1. Navigate to your account settings
+2. Find the "Predefined Assignees" section
+3. Use the search field to find users in Jira (minimum 2 characters)
+4. Search results appear with user names and avatars
+5. Click "Add" next to a user to save them as a preset
+6. The user appears in the predefined list with avatar and display name
+
+**Tip:** Add your most frequently assigned team members for fastest workflow.
+
+### Using Predefined Assignees
+
+1. Right-click on any issue
+2. Select "Change assignee" from the context menu
+3. Modal shows:
+   - **Unassigned** option (to remove current assignee)
+   - **Predefined assignees** with avatars (from settings)
+   - **Search field** for finding any user in Jira
+4. Select an assignee and click "Confirm"
+5. Change syncs to Jira and updates the display
+
+**Current assignee indicator:** The currently assigned user is marked with "(current)" in the modal.
+
+![Assignee Modal](/img/assignee-modal.png)
+
+### Searching for Assignees
+
+If the user you need isn't in the predefined list:
+
+1. Open the assignee modal (right-click → "Change assignee")
+2. Type at least 2 characters in the search field
+3. Search results appear below (300ms debounce for performance)
+4. Results show avatars and display names
+5. Select user and click "Confirm"
+
+**Note:** Search results are separate from predefined assignees. If a user appears in both lists, they won't be duplicated.
+
+### Removing Predefined Assignees
+
+Click the "✕" button next to any user in the settings to remove them from the predefined list. This only removes them from quick access—existing issue assignments are not affected.
+
+### Technical Details
+
+**Stored data per assignee:**
+- `accountId` - Jira internal user ID (used for API calls)
+- `displayName` - User's display name shown in UI
+
+When you add a predefined assignee, the plugin fetches and stores both values. This ensures assignments work correctly even if display names change in Jira.
+
 ## Security risks
 
 ### Credentials storage

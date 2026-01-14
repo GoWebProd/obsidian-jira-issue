@@ -67,6 +67,35 @@ project = REF AND status changed to (Done, "Won't Fix", Archived, "Can't Reprodu
 ```
 ````
 
+### 📊`jira-kanban`
+- [Documentation](https://marc0l92.github.io/obsidian-jira-issue/docs/components/jira-kanban)
+- Simple example:
+````
+```jira-kanban
+query: project = DEMO AND sprint in openSprints()
+columns: TODO, IN PROGRESS, DONE
+```
+````
+- Advanced example with swimlanes and estimations:
+````
+```jira-kanban
+query: project = DEMO AND sprint in openSprints()
+columns:
+  - name: Backlog
+    statuses: [To Do, Open]
+  - name: In Progress
+    statuses: [In Progress]
+    wipLimit: 3
+  - name: Review
+    statuses: [In Review, Code Review]
+  - name: Done
+    statuses: [Done, Closed]
+swimlaneBy: assignee
+estimationType: points
+fields: [KEY, SUMMARY, PRIORITY, ASSIGNEE, LABELS]
+```
+````
+
 ### 🏷️Inline issues
 - [Documentation](https://marc0l92.github.io/obsidian-jira-issue/docs/components/inline-issue)
 - Example:
