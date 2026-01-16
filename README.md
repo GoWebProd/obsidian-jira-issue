@@ -96,6 +96,25 @@ fields: [KEY, SUMMARY, PRIORITY, ASSIGNEE, LABELS]
 ```
 ````
 
+### 📜`jira-changelog`
+- [Documentation](https://marc0l92.github.io/obsidian-jira-issue/docs/components/jira-changelog)
+- Simple example:
+````
+```jira-changelog
+query: project = DEMO AND updated >= -1d
+```
+````
+- Advanced example with grouping and filtering:
+````
+```jira-changelog
+query: project = DEMO AND sprint in openSprints()
+period: 1w
+groupBy: author
+fields: status, assignee, priority
+limit: 50
+```
+````
+
 ### 🏷️Inline issues
 - [Documentation](https://marc0l92.github.io/obsidian-jira-issue/docs/components/inline-issue)
 - Example:

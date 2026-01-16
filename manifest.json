@@ -1,7 +1,7 @@
 {
   "id": "obsidian-jira-master",
   "name": "Jira Master",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "minAppVersion": "0.12.0",
   "description": "This plugin allows you to track the progress of Atlassian Jira issues from your Obsidian notes.",
   "author": "GoWebProd",

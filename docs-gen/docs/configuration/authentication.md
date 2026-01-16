@@ -174,6 +174,69 @@ Click the "✕" button next to any user in the settings to remove them from the 
 
 When you add a predefined assignee, the plugin fetches and stores both values. This ensures assignments work correctly even if display names change in Jira.
 
+## People Field Mappings
+
+People Field Mappings allow you to configure custom user-type fields for bulk assignment. Many Jira workflows use custom fields like "Code Reviewer", "QA Engineer", or "Product Owner" that accept user values. This feature lets you update multiple such fields in a single action.
+
+**Location**: Settings → Jira Issue → [Account Name] → People Field Mappings
+
+### Use Case
+
+Imagine you have these custom fields in Jira:
+- **Code Reviewer** (customfield_10100) - Who reviews the code
+- **QA Engineer** (customfield_10101) - Who tests the issue
+- **Technical Writer** (customfield_10102) - Who documents the feature
+
+Instead of opening Jira and updating each field separately, you can:
+1. Right-click an issue in Obsidian
+2. Select "Assign to fields"
+3. Choose which fields to update
+4. Search and select a user
+5. Click "Apply" to update all selected fields at once
+
+### Adding People Field Mappings
+
+1. Navigate to your account settings
+2. Find the "People Field Mappings" section
+3. Enter a display name (e.g., "Code Reviewer")
+4. Enter the field ID (e.g., "customfield_10100")
+5. Click "Add"
+
+**Finding Field IDs:**
+1. Go to Settings → [Account] → Custom Fields
+2. Click "Refresh Custom Fields" to fetch from Jira
+3. Look for fields with "User" type
+4. Copy the field ID (customfield_XXXXX)
+
+### Using People Field Mappings
+
+1. Right-click on any issue (inline, fence block, search result, kanban card)
+2. Select "Assign to fields" from the context menu
+3. The modal shows:
+   - **Checkboxes** for each configured field
+   - **Search field** for finding users
+   - **Predefined assignees** (if configured)
+4. Check the fields you want to update
+5. Search and select a user
+6. Click "Apply to N fields"
+
+**Note:** The plugin remembers your last selected fields between uses.
+
+### Removing People Field Mappings
+
+Click the "✕" button next to any mapping to remove it. This only removes the configuration—existing field values in Jira are not affected.
+
+### Technical Details
+
+**Stored data per mapping:**
+- `displayName` - Friendly name shown in the checkbox list
+- `fieldId` - Jira's internal field identifier (customfield_XXXXX)
+
+**API behavior:**
+- Updates are batched into a single API call per issue
+- Only checked fields are updated
+- The selected user's accountId is used for the update
+
 ## Security risks
 
 ### Credentials storage

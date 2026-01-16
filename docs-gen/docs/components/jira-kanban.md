@@ -96,7 +96,7 @@ The `fields` parameter controls what information appears on each issue card. Ava
 |------------|-------------|---------|
 | `KEY` | Issue key (e.g., DEMO-123) | Always clickable to open detail modal |
 | `SUMMARY` | Issue title | |
-| `STATUS` | Current status badge | Color-coded by status category |
+| `STATUS` | Current status badge with days in status | Color-coded, shows "5d" or "today" |
 | `PRIORITY` | Priority icon and name | Highest, High, Medium, Low, Lowest |
 | `ASSIGNEE` | Assignee name with avatar | Shows "Unassigned" if empty |
 | `REPORTER` | Reporter name with avatar | |
@@ -278,6 +278,16 @@ noValueSwimlane: Unassigned Tasks
 ```
 ````
 
+## Days in Status
+
+Each kanban card displays how long the issue has been in its current status. This helps identify stale issues and track cycle time.
+
+- **Display format**: Shows next to the status badge (e.g., "5d" for 5 days, "today" for same-day changes)
+- **Calculation**: Based on the issue's changelog history
+- **Fallback**: If no status transition is found, uses the issue creation date
+
+This feature requires no configuration and works automatically for all kanban boards.
+
 ## Interactive Features
 
 All issues in the kanban board support the same interactive features as other components:
@@ -301,6 +311,7 @@ Right-click on any issue card for quick actions:
 - **Remove labels** - Remove existing labels from the issue
 - **Change priority** - Select from available priorities in Jira
 - **Change assignee** - Choose from predefined assignees or search for users
+- **Assign to fields** - Bulk update custom user-type fields (Code Reviewer, QA Engineer, etc.)
 
 All changes update the issue in Jira, refresh the cache, and re-render the board automatically.
 
