@@ -120,7 +120,8 @@ export class AssigneeModal extends Modal {
 
         // Unassigned option
         const unassignedItem = this._resultsContainer.createDiv({
-            cls: `jira-assignee-item${this._selectedAccountId === null ? ' is-selected' : ''}`
+            cls: `jira-assignee-item${this._selectedAccountId === null ? ' is-selected' : ''}`,
+            attr: { 'data-account-id': 'null' }
         })
 
         // Placeholder avatar for unassigned
@@ -172,7 +173,8 @@ export class AssigneeModal extends Modal {
         const isSelected = this._selectedAccountId === assignee.accountId
 
         const item = this._resultsContainer.createDiv({
-            cls: `jira-assignee-item${isSelected ? ' is-selected' : ''}${isCurrent ? ' is-current' : ''}`
+            cls: `jira-assignee-item${isSelected ? ' is-selected' : ''}${isCurrent ? ' is-current' : ''}`,
+            attr: { 'data-account-id': assignee.accountId }
         })
 
         // Avatar - use gradient placeholder if no image URL
@@ -207,16 +209,17 @@ export class AssigneeModal extends Modal {
     }
 
     private updateSelection(): void {
-        // Update visual selection state
         const items = this._resultsContainer.querySelectorAll('.jira-assignee-item')
         items.forEach(item => {
-            const radio = item.querySelector('input[type="radio"]') as HTMLInputElement
-            if (radio) {
-                if (radio.checked) {
-                    item.addClass('is-selected')
-                } else {
-                    item.removeClass('is-selected')
-                }
+            const accountId = item.getAttribute('data-account-id')
+            const isSelected = accountId === 'null'
+                ? this._selectedAccountId === null
+                : accountId === this._selectedAccountId
+
+            if (isSelected) {
+                item.addClass('is-selected')
+            } else {
+                item.removeClass('is-selected')
             }
         })
     }
