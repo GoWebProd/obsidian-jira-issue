@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkobsidian_jira_master=globalThis.webpackChunkobsidian_jira_master||[]).push([[332],{4061(a){a.exports=JSON.parse('{"name":"docusaurus-plugin-content-pages","id":"default"}')}}]);
