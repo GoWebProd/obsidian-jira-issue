@@ -63,6 +63,17 @@ export interface IJiraIssue {
                 }
             }
         }[]
+        parent?: {
+            id: string
+            key: string
+            fields?: {
+                summary?: string
+                issuetype?: {
+                    iconUrl: string
+                    name: string
+                }
+            }
+        }
         aggregateprogress: {
             percent: number
         }

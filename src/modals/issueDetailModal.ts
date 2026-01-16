@@ -54,6 +54,41 @@ export class IssueDetailModal extends Modal {
             cls: 'jira-modal-summary',
             text: this._issue.fields.summary
         })
+
+        this.renderParentIssue(header)
+    }
+
+    private renderParentIssue(container: HTMLElement): void {
+        const parent = this._issue.fields.parent
+        if (!parent?.key) return
+
+        const parentEl = container.createDiv({ cls: 'jira-modal-parent' })
+
+        createSpan({ text: 'Parent', cls: 'jira-modal-parent-label', parent: parentEl })
+
+        const keyRow = parentEl.createDiv({ cls: 'jira-modal-parent-key-row' })
+
+        if (parent.fields?.issuetype?.iconUrl) {
+            createEl('img', {
+                cls: 'jira-modal-type-icon',
+                attr: { src: parent.fields.issuetype.iconUrl },
+                parent: keyRow
+            })
+        }
+
+        createEl('a', {
+            cls: 'jira-modal-parent-key',
+            text: parent.key,
+            href: RC.issueUrl(this._issue.account, parent.key),
+            parent: keyRow
+        })
+
+        if (parent.fields?.summary) {
+            parentEl.createDiv({
+                text: parent.fields.summary,
+                cls: 'jira-modal-parent-summary'
+            })
+        }
     }
 
     private renderMainContent(container: HTMLElement): void {
