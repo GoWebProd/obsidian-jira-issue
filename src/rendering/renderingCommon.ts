@@ -7,6 +7,14 @@ import { SettingsData } from "../settings"
 import { attachIssueClickHandler } from "./issueClickHandler"
 import { attachIssueContextMenuHandler } from "./issueContextMenuHandler"
 
+/**
+ * Normalize host URL by removing trailing slashes
+ * Prevents double slashes in URLs when concatenating paths
+ */
+function normalizeHost(host: string): string {
+    return host.endsWith('/') ? host.slice(0, -1) : host
+}
+
 // Avatar gradient colors for placeholder avatars
 const AVATAR_GRADIENTS = [
     'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',  // Purple-violet
@@ -92,13 +100,15 @@ export const JIRA_STATUS_COLOR_MAP_BY_NAME: Record<string, string> = {
 export default {
     issueUrl(account: IJiraIssueAccountSettings, issueKey: string): string {
         try {
-            return (new URL(`${account.host}/browse/${issueKey}`)).toString()
+            const normalizedHost = normalizeHost(account.host)
+            return (new URL(`${normalizedHost}/browse/${issueKey}`)).toString()
         } catch (e) { return '' }
     },
 
     searchUrl(account: IJiraIssueAccountSettings, searchQuery: string): string {
         try {
-            return (new URL(`${account.host}/issues/?jql=${searchQuery}`)).toString()
+            const normalizedHost = normalizeHost(account.host)
+            return (new URL(`${normalizedHost}/issues/?jql=${searchQuery}`)).toString()
         } catch (e) { return '' }
     },
 

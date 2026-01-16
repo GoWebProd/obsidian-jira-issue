@@ -267,7 +267,8 @@ export class JiraIssueSettingTab extends PluginSettingTab {
                 .setPlaceholder('Example: ' + DEFAULT_ACCOUNT.host)
                 .setValue(newAccount.host)
                 .onChange(async value => {
-                    newAccount.host = value
+                    // Normalize host by removing trailing slashes to prevent double slashes in URLs
+                    newAccount.host = value.endsWith('/') ? value.slice(0, -1) : value
                 }))
         new Setting(containerEl)
             .setName('Authentication type')
