@@ -198,6 +198,44 @@ export interface IJiraFieldSchema {
     items?: string
 }
 
+export interface IJiraTransition {
+    id: string
+    name: string
+    to: IJiraTransitionTo
+    fields?: Record<string, IJiraTransitionField>
+}
+
+export interface IJiraTransitionTo {
+    id: string
+    name: string
+    statusCategory?: {
+        id: number
+        key: string
+        colorName: string
+        name: string
+    }
+}
+
+export interface IJiraTransitionField {
+    required: boolean
+    name: string
+    hasDefaultValue?: boolean
+    schema: {
+        type: string
+        items?: string
+        system?: string
+        custom?: string
+        customId?: number
+    }
+    allowedValues?: any[]
+    operations?: string[]
+}
+
+export interface IJiraTransitionsResponse {
+    expand?: string
+    transitions: IJiraTransition[]
+}
+
 export interface IJiraAutocompleteDataField {
     value: string
     displayName: string

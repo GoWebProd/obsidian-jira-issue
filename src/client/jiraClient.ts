@@ -1,6 +1,6 @@
 import { Platform, requestUrl, RequestUrlParam, RequestUrlResponse } from 'obsidian'
 import { AVATAR_RESOLUTION, EAuthenticationTypes, IJiraIssueAccountSettings } from '../interfaces/settingsInterfaces'
-import { ESprintState, IJiraAutocompleteField, IJiraBoard, IJiraDevStatus, IJiraField, IJiraIssue, IJiraPriority, IJiraSearchResults, IJiraSprint, IJiraStatus, IJiraUser } from '../interfaces/issueInterfaces'
+import { ESprintState, IJiraAutocompleteField, IJiraBoard, IJiraDevStatus, IJiraField, IJiraIssue, IJiraPriority, IJiraSearchResults, IJiraSprint, IJiraStatus, IJiraTransition, IJiraUser } from '../interfaces/issueInterfaces'
 import { SettingsData } from "../settings"
 import { RequestQueue } from "./requestQueue"
 import { exponentialBackoff, parseRetryAfter, sleep } from "../utils"
@@ -763,5 +763,42 @@ export default {
             account: options.account || null,
             body: body
         })
+    },
+
+    async getIssueTransitions(issueKey: string, options: { account?: IJiraIssueAccountSettings } = {}): Promise<IJiraTransition[]> {
+        const queryParameters = new URLSearchParams({
+            expand: 'transitions.fields',
+        })
+        const response = await sendRequest(
+            {
+                method: 'GET',
+                path: `/issue/${issueKey}/transitions`,
+                queryParameters: queryParameters,
+                account: options.account || null,
+            }
+        )
+        return response.transitions || []
+    },
+
+    async transitionIssue(
+        issueKey: string,
+        transitionId: string,
+        fields?: Record<string, unknown>,
+        options: { account?: IJiraIssueAccountSettings } = {}
+    ): Promise<void> {
+        const body: Record<string, unknown> = {
+            transition: { id: transitionId }
+        }
+        if (fields && Object.keys(fields).length > 0) {
+            body.fields = fields
+        }
+        await sendRequest(
+            {
+                method: 'POST',
+                path: `/issue/${issueKey}/transitions`,
+                account: options.account || null,
+                body: body
+            }
+        )
     },
 }
