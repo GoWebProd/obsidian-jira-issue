@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "node esbuild.config.mjs",
         "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+        "deploy": "cp main.js styles.css ~/Documents/Obsidian\\ Vault/.obsidian/plugins/obsidian-jira-issue/",
         "version": "node version-bump.mjs",
         "test": "cross-env-shell TZ=UTC jest",
         "test-watch": "cross-env-shell TZ=UTC \"jest --watchAll\""
