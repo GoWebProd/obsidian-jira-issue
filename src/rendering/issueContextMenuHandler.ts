@@ -4,6 +4,7 @@ import { AssigneeModal } from "../modals/assigneeModal"
 import { LabelManagementModal } from "../modals/labelManagementModal"
 import { PeopleFieldsModal } from "../modals/peopleFieldsModal"
 import { PriorityModal } from "../modals/priorityModal"
+import { TransitionModal } from "../modals/transitionModal"
 
 /**
  * Attaches a context menu (right-click) handler to an issue element.
@@ -53,6 +54,14 @@ export function attachIssueContextMenuHandler(
             .setIcon('user')
             .onClick(() => {
                 new AssigneeModal(issue, onIssueUpdated).open()
+            })
+        )
+
+        menu.addItem(item => item
+            .setTitle('Change status')
+            .setIcon('arrow-right-circle')
+            .onClick(() => {
+                new TransitionModal(issue, onIssueUpdated).open()
             })
         )
 
