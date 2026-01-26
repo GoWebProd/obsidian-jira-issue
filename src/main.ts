@@ -9,6 +9,7 @@ import { InlineIssueRenderer } from './rendering/inlineIssueRenderer'
 import { IssueFenceRenderer } from './rendering/issueFenceRenderer'
 import { KanbanFenceRenderer } from './rendering/kanbanFenceRenderer'
 import { SearchFenceRenderer } from './rendering/searchFenceRenderer'
+import { SprintPlanningFenceRenderer } from './rendering/sprintPlanningFenceRenderer'
 import { SearchWizardModal } from './modals/searchWizardModal'
 import { ViewPluginManager } from './rendering/inlineIssueViewPlugin'
 import { QuerySuggest } from './suggestions/querySuggest'
@@ -42,6 +43,7 @@ export default class JiraIssuePlugin extends Plugin {
         this.registerMarkdownCodeBlockProcessor('jira-count', CountFenceRenderer)
         this.registerMarkdownCodeBlockProcessor('jira-kanban', KanbanFenceRenderer)
         this.registerMarkdownCodeBlockProcessor('jira-changelog', ChangelogFenceRenderer)
+        this.registerMarkdownCodeBlockProcessor('jira-sprint-planning', SprintPlanningFenceRenderer)
         // Suggestion menu for columns inside jira-search fence
         this.app.workspace.onLayoutReady(() => {
             this._columnsSuggest = new ColumnsSuggest(this.app)
@@ -110,6 +112,13 @@ export default class JiraIssuePlugin extends Plugin {
             name: 'Insert changelog template',
             editorCallback: (editor: Editor, view: MarkdownView) => {
                 editor.replaceRange('```jira-changelog\nquery: project = MYPROJ AND updated >= -1d\nlimit: 50\nperiod: 24h\n```', editor.getCursor())
+            }
+        })
+        this.addCommand({
+            id: 'obsidian-jira-sprint-planning-template-fence',
+            name: 'Insert sprint planning template',
+            editorCallback: (editor: Editor, view: MarkdownView) => {
+                editor.replaceRange('```jira-sprint-planning\nboard: 123\nestimationfield: customfield_10016\nestimationtype: story_points\nhoursperday: 8\n\ncapacity:\n  john.doe: 40\n  jane.smith: 32\n```', editor.getCursor())
             }
         })
     }

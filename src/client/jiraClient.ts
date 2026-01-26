@@ -19,6 +19,9 @@ interface RequestOptions {
 const MAX_RETRIES = 5
 const requestQueues = new Map<string, RequestQueue>()
 
+// Image cache by URL - avoids re-fetching same icons (type, priority) across issues
+const imageCache = new Map<string, string | null>()
+
 function getMimeType(imageBuffer: ArrayBuffer): string {
     const imageBufferUint8 = new Uint8Array(imageBuffer.slice(0, 4))
     const bytes: string[] = []
@@ -285,6 +288,11 @@ async function preFetchImage(account: IJiraIssueAccountSettings, url: string): P
         return url
     }
 
+    // Check cache first - same icons (type, priority) are reused across issues
+    if (imageCache.has(url)) {
+        return imageCache.get(url)
+    }
+
     // Get or create request queue for this account
     let queue = requestQueues.get(account.alias)
     if (!queue && account.rateLimit?.enabled) {
@@ -303,44 +311,65 @@ async function preFetchImage(account: IJiraIssueAccountSettings, url: string): P
 
     const fetchFn = () => preFetchImageWithRetry(account, options)
 
+    let result: string | null = null
+
     // If rate limiting is disabled, execute directly
     if (!queue || !account.rateLimit?.enabled) {
         const response = await fetchFn()
         if (response.status === 200) {
             const mimeType = getMimeType(response.arrayBuffer)
             if (mimeType) {
-                return `data:${mimeType};base64,` + bufferBase64Encode(response.arrayBuffer)
+                result = `data:${mimeType};base64,` + bufferBase64Encode(response.arrayBuffer)
             }
         }
-        return null
-    }
-
-    // Add to queue
-    const response = await queue.add(fetchFn)
-    if (response.status === 200) {
-        const mimeType = getMimeType(response.arrayBuffer)
-        if (mimeType) {
-            return `data:${mimeType};base64,` + bufferBase64Encode(response.arrayBuffer)
+    } else {
+        // Add to queue
+        const response = await queue.add(fetchFn)
+        if (response.status === 200) {
+            const mimeType = getMimeType(response.arrayBuffer)
+            if (mimeType) {
+                result = `data:${mimeType};base64,` + bufferBase64Encode(response.arrayBuffer)
+            }
         }
     }
-    return null
+
+    // Cache the result (including null for failed fetches)
+    imageCache.set(url, result)
+    return result
 }
 
 async function fetchIssueImages(issue: IJiraIssue) {
-    if (issue.fields) {
-        if (issue.fields.issuetype && issue.fields.issuetype.iconUrl) {
-            issue.fields.issuetype.iconUrl = await preFetchImage(issue.account, issue.fields.issuetype.iconUrl)
-        }
-        if (issue.fields.reporter) {
-            issue.fields.reporter.avatarUrls[AVATAR_RESOLUTION] = await preFetchImage(issue.account, issue.fields.reporter.avatarUrls[AVATAR_RESOLUTION])
-        }
-        if (issue.fields.assignee && issue.fields.assignee.avatarUrls && issue.fields.assignee.avatarUrls[AVATAR_RESOLUTION]) {
-            issue.fields.assignee.avatarUrls[AVATAR_RESOLUTION] = await preFetchImage(issue.account, issue.fields.assignee.avatarUrls[AVATAR_RESOLUTION])
-        }
-        if (issue.fields.priority && issue.fields.priority.iconUrl) {
-            issue.fields.priority.iconUrl = await preFetchImage(issue.account, issue.fields.priority.iconUrl)
-        }
+    if (!issue.fields) return
+
+    // Collect all image fetch promises to run in parallel
+    const fetchPromises: Promise<void>[] = []
+
+    if (issue.fields.issuetype?.iconUrl) {
+        fetchPromises.push(
+            preFetchImage(issue.account, issue.fields.issuetype.iconUrl)
+                .then(url => { issue.fields.issuetype.iconUrl = url })
+        )
     }
+    if (issue.fields.reporter?.avatarUrls?.[AVATAR_RESOLUTION]) {
+        fetchPromises.push(
+            preFetchImage(issue.account, issue.fields.reporter.avatarUrls[AVATAR_RESOLUTION])
+                .then(url => { issue.fields.reporter.avatarUrls[AVATAR_RESOLUTION] = url })
+        )
+    }
+    if (issue.fields.assignee?.avatarUrls?.[AVATAR_RESOLUTION]) {
+        fetchPromises.push(
+            preFetchImage(issue.account, issue.fields.assignee.avatarUrls[AVATAR_RESOLUTION])
+                .then(url => { issue.fields.assignee.avatarUrls[AVATAR_RESOLUTION] = url })
+        )
+    }
+    if (issue.fields.priority?.iconUrl) {
+        fetchPromises.push(
+            preFetchImage(issue.account, issue.fields.priority.iconUrl)
+                .then(url => { issue.fields.priority.iconUrl = url })
+        )
+    }
+
+    await Promise.all(fetchPromises)
 }
 
 export default {
@@ -800,5 +829,166 @@ export default {
                 body: body
             }
         )
+    },
+
+    // ============ Sprint Planning API Methods ============
+
+    /**
+     * Get backlog issues for a board (issues not in any sprint)
+     */
+    async getBoardBacklog(boardId: number, options: { limit?: number, offset?: number, fields?: string[], account?: IJiraIssueAccountSettings } = {}): Promise<IJiraSearchResults> {
+        const opt = {
+            fields: options.fields || ['*all'],
+            offset: options.offset || 0,
+            limit: options.limit || 50,
+            account: options.account || null,
+        }
+        const queryParameters = new URLSearchParams({
+            fields: opt.fields.join(','),
+            startAt: opt.offset > 0 ? opt.offset.toString() : '',
+            maxResults: opt.limit > 0 ? opt.limit.toString() : '',
+        })
+        const response = await sendRequest(
+            {
+                method: 'GET',
+                path: `/rest/agile/1.0/board/${boardId}/backlog`,
+                queryParameters: queryParameters,
+                noBasePath: true,
+                account: opt.account,
+            }
+        )
+        const searchResults: IJiraSearchResults = {
+            issues: response.issues || [],
+            maxResults: response.maxResults,
+            startAt: response.startAt,
+            total: response.total,
+            account: response.account,
+        }
+        // Set account on all issues first, then fetch images in parallel
+        for (const issue of searchResults.issues) {
+            issue.account = searchResults.account
+        }
+        await Promise.all(searchResults.issues.map(issue => fetchIssueImages(issue)))
+        return searchResults
+    },
+
+    /**
+     * Get issues in a sprint
+     */
+    async getSprintIssues(sprintId: number, options: { limit?: number, offset?: number, fields?: string[], account?: IJiraIssueAccountSettings } = {}): Promise<IJiraSearchResults> {
+        const opt = {
+            fields: options.fields || ['*all'],
+            offset: options.offset || 0,
+            limit: options.limit || 50,
+            account: options.account || null,
+        }
+        const queryParameters = new URLSearchParams({
+            fields: opt.fields.join(','),
+            startAt: opt.offset > 0 ? opt.offset.toString() : '',
+            maxResults: opt.limit > 0 ? opt.limit.toString() : '',
+        })
+        const response = await sendRequest(
+            {
+                method: 'GET',
+                path: `/rest/agile/1.0/sprint/${sprintId}/issue`,
+                queryParameters: queryParameters,
+                noBasePath: true,
+                account: opt.account,
+            }
+        )
+        const searchResults: IJiraSearchResults = {
+            issues: response.issues || [],
+            maxResults: response.maxResults,
+            startAt: response.startAt,
+            total: response.total,
+            account: response.account,
+        }
+        // Set account on all issues first, then fetch images in parallel
+        for (const issue of searchResults.issues) {
+            issue.account = searchResults.account
+        }
+        await Promise.all(searchResults.issues.map(issue => fetchIssueImages(issue)))
+        return searchResults
+    },
+
+    /**
+     * Move issues to a sprint
+     */
+    async moveIssuesToSprint(sprintId: number, issueKeys: string[], options: { account?: IJiraIssueAccountSettings } = {}): Promise<void> {
+        await sendRequest(
+            {
+                method: 'POST',
+                path: `/rest/agile/1.0/sprint/${sprintId}/issue`,
+                noBasePath: true,
+                account: options.account || null,
+                body: {
+                    issues: issueKeys
+                }
+            }
+        )
+    },
+
+    /**
+     * Move issues to backlog (remove from sprint)
+     */
+    async moveIssuesToBacklog(issueKeys: string[], options: { account?: IJiraIssueAccountSettings } = {}): Promise<void> {
+        await sendRequest(
+            {
+                method: 'POST',
+                path: `/rest/agile/1.0/backlog/issue`,
+                noBasePath: true,
+                account: options.account || null,
+                body: {
+                    issues: issueKeys
+                }
+            }
+        )
+    },
+
+    /**
+     * Start a sprint (change state from future to active)
+     */
+    async startSprint(
+        sprintId: number,
+        startDate: string,
+        endDate: string,
+        options: { goal?: string, account?: IJiraIssueAccountSettings } = {}
+    ): Promise<IJiraSprint> {
+        const body: Record<string, unknown> = {
+            state: 'active',
+            startDate: startDate,
+            endDate: endDate,
+        }
+        if (options.goal !== undefined) {
+            body.goal = options.goal
+        }
+        return await sendRequest(
+            {
+                method: 'POST',
+                path: `/rest/agile/1.0/sprint/${sprintId}`,
+                noBasePath: true,
+                account: options.account || null,
+                body: body
+            }
+        ) as IJiraSprint
+    },
+
+    /**
+     * Update sprint details
+     */
+    async updateSprint(
+        sprintId: number,
+        updates: { name?: string, goal?: string, startDate?: string, endDate?: string },
+        options: { account?: IJiraIssueAccountSettings } = {}
+    ): Promise<IJiraSprint> {
+        return await sendRequest(
+            {
+                method: 'PUT',
+                path: `/rest/agile/1.0/sprint/${sprintId}`,
+                noBasePath: true,
+                account: options.account || null,
+                body: updates
+            }
+        ) as IJiraSprint
     },
 }
