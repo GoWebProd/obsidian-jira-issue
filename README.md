@@ -113,6 +113,29 @@ limit: 50
 ```
 ````
 
+### 🗓️`jira-sprint-planning`
+- [Documentation](https://GoWebProd.github.io/obsidian-jira-master/docs/components/jira-sprint-planning)
+- Simple example:
+````
+```jira-sprint-planning
+board: 123
+estimationfield: customfield_10016
+```
+````
+- Advanced example with capacity:
+````
+```jira-sprint-planning
+board: 123
+estimationfield: customfield_10016
+estimationtype: story_points
+excludetypes: Epic
+
+capacity:
+  John Doe: 20
+  Jane Smith: 15
+```
+````
+
 ### 🏷️Inline issues
 - [Documentation](https://GoWebProd.github.io/obsidian-jira-master/docs/components/inline-issue)
 - Example:
