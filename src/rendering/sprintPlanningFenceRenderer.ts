@@ -2,7 +2,7 @@ import { MarkdownPostProcessorContext, Notice, setIcon } from "obsidian"
 import { toDefaultedIssue, IJiraSearchResults, IJiraIssue, IJiraSprint, ESprintState } from "../interfaces/issueInterfaces"
 import JiraClient from "../client/jiraClient"
 import ObjectsCache from "../objectsCache"
-import RC, { createAvatarPlaceholder, getPriorityColorClass } from "./renderingCommon"
+import RC, { createAvatarPlaceholder, getPriorityColorClass, JIRA_STATUS_COLOR_MAP, JIRA_STATUS_COLOR_MAP_BY_NAME } from "./renderingCommon"
 import { SprintPlanningView } from "../sprintPlanningView"
 import { SettingsData } from "../settings"
 import { attachIssueClickHandler } from "./issueClickHandler"
@@ -111,6 +111,18 @@ function filterIssuesByType(issues: IJiraIssue[], excludeTypes: string[]): IJira
 }
 
 /**
+ * Filter issues by excluding specified statuses
+ */
+function filterIssuesByStatus(issues: IJiraIssue[], excludeStatuses: string[]): IJiraIssue[] {
+    if (excludeStatuses.length === 0) return issues
+    const excludeStatusesLower = excludeStatuses.map(s => s.toLowerCase())
+    return issues.filter(issue => {
+        const statusName = issue.fields.status?.name?.toLowerCase() || ''
+        return !excludeStatusesLower.includes(statusName)
+    })
+}
+
+/**
  * Render a compact issue card for sprint planning
  */
 function renderIssueCard(
@@ -124,8 +136,10 @@ function renderIssueCard(
     card.setAttribute('data-source', source)
     card.setAttribute('data-assignee', issue.fields.assignee?.displayName || 'unassigned')
 
-    // Attach context menu
-    attachIssueContextMenuHandler(card, issue, onIssueUpdated)
+    // Attach context menu with estimation field from view
+    attachIssueContextMenuHandler(card, issue, onIssueUpdated, {
+        estimationField: view.estimationField
+    })
 
     // Make card draggable
     card.draggable = true
@@ -162,6 +176,20 @@ function renderIssueCard(
 
     // Summary
     createDiv({ cls: 'ji-sprint-card-summary', text: issue.fields.summary, parent: card })
+
+    // Status
+    if (issue.fields.status?.name) {
+        const statusColor = JIRA_STATUS_COLOR_MAP_BY_NAME[issue.fields.status.name] ||
+            JIRA_STATUS_COLOR_MAP[issue.fields.status.statusCategory?.colorName] ||
+            'is-light'
+        const statusRow = createDiv({ cls: 'ji-sprint-card-status', parent: card })
+        createSpan({
+            cls: `ji-tag ${statusColor}`,
+            text: issue.fields.status.name,
+            title: issue.fields.status.description,
+            parent: statusRow
+        })
+    }
 
     // Footer: assignee + estimation
     const footer = createDiv({ cls: 'ji-sprint-card-footer' })
@@ -201,7 +229,8 @@ function renderIssueCard(
 }
 
 /**
- * Update an existing issue card's assignee section without full re-render
+ * Update an existing issue card without full re-render
+ * Updates: assignee, status, estimation
  */
 function updateIssueCard(
     card: HTMLElement,
@@ -211,6 +240,21 @@ function updateIssueCard(
     // Update data-assignee attribute
     card.setAttribute('data-assignee', issue.fields.assignee?.displayName || 'unassigned')
 
+    // Update status
+    const statusRow = card.querySelector('.ji-sprint-card-status')
+    if (statusRow && issue.fields.status?.name) {
+        statusRow.empty()
+        const statusColor = JIRA_STATUS_COLOR_MAP_BY_NAME[issue.fields.status.name] ||
+            JIRA_STATUS_COLOR_MAP[issue.fields.status.statusCategory?.colorName] ||
+            'is-light'
+        createSpan({
+            cls: `ji-tag ${statusColor}`,
+            text: issue.fields.status.name,
+            title: issue.fields.status.description,
+            parent: statusRow
+        })
+    }
+
     // Find footer with assignee
     const footer = card.querySelector('.ji-sprint-card-footer')
     if (!footer) return
@@ -218,9 +262,25 @@ function updateIssueCard(
     // Remove existing assignee elements (avatar + name)
     footer.querySelectorAll('.ji-sprint-card-avatar, .ji-sprint-card-assignee').forEach(el => el.remove())
 
-    // Find estimation element to insert before it
-    const estimationEl = footer.querySelector('.ji-sprint-card-estimation')
+    // Update estimation
+    let estimationEl = footer.querySelector('.ji-sprint-card-estimation')
+    const estimation = getIssueEstimation(issue, view.estimationField, view)
+    if (estimation > 0) {
+        if (estimationEl) {
+            estimationEl.textContent = view.formatEstimation(estimation)
+        } else {
+            estimationEl = createSpan({
+                cls: 'ji-sprint-card-estimation',
+                text: view.formatEstimation(estimation),
+                parent: footer
+            })
+        }
+    } else if (estimationEl) {
+        estimationEl.remove()
+        estimationEl = null
+    }
 
+    // Update assignee (insert before estimation if exists)
     if (issue.fields.assignee?.displayName) {
         // Avatar
         if (issue.fields.assignee.avatarUrls?.['16x16']) {
@@ -317,7 +377,8 @@ function renderCapacityCard(
 function updateCapacitySection(
     board: HTMLElement,
     sprintIssues: IJiraIssue[],
-    view: SprintPlanningView
+    view: SprintPlanningView,
+    onFilterClick?: (displayName: string) => void
 ): void {
     const capacitySection = board.querySelector('.ji-sprint-planning-capacity')
     if (!capacitySection) return
@@ -330,7 +391,7 @@ function updateCapacitySection(
     if (capacityCards) {
         capacityCards.empty()
         for (const stats of capacityStats) {
-            capacityCards.appendChild(renderCapacityCard(stats, view))
+            capacityCards.appendChild(renderCapacityCard(stats, view, onFilterClick))
         }
     }
 
@@ -397,12 +458,34 @@ function renderSprintPlanningBoard(
 ): void {
     const board = createDiv({ cls: `ji-sprint-planning ${RC.getTheme()}` })
 
-    // Apply type filter
-    const filteredSprintIssues = filterIssuesByType(data.sprintIssues, view.excludeTypes)
-    const filteredBacklogIssues = filterIssuesByType(data.backlogIssues, view.excludeTypes)
+    // Apply type and status filters
+    const filteredSprintIssues = filterIssuesByStatus(
+        filterIssuesByType(data.sprintIssues, view.excludeTypes),
+        view.excludeStatuses
+    )
+    const filteredBacklogIssues = filterIssuesByStatus(
+        filterIssuesByType(data.backlogIssues, view.excludeTypes),
+        view.excludeStatuses
+    )
 
     // Filter state
     const filterState: IFilterState = { assignee: null }
+
+    // Callback for assignee filter (defined early so it can be used in onIssueUpdated)
+    const onFilterClick = (displayName: string): void => {
+        // Toggle filter: if same assignee clicked, clear filter
+        if (filterState.assignee === displayName) {
+            filterState.assignee = null
+        } else {
+            filterState.assignee = displayName
+        }
+        applyAssigneeFilter(board, filterState)
+        // Update clear filter button visibility
+        const clearFilterBtn = board.querySelector('.ji-filter-clear-btn') as HTMLElement
+        if (clearFilterBtn) {
+            clearFilterBtn.style.display = filterState.assignee ? 'inline-block' : 'none'
+        }
+    }
 
     // Callback for issue updates - optimistic update without full re-render
     const onIssueUpdated = (updatedIssue: IJiraIssue): void => {
@@ -424,7 +507,10 @@ function renderSprintPlanningBoard(
 
         // 3. Update capacity section if issue is in sprint (use filtered list)
         if (issueInSprint) {
-            updateCapacitySection(board, filterIssuesByType(data.sprintIssues, view.excludeTypes), view)
+            updateCapacitySection(board, filterIssuesByStatus(
+                filterIssuesByType(data.sprintIssues, view.excludeTypes),
+                view.excludeStatuses
+            ), view, onFilterClick)
         }
 
         // 4. Update cache with modified data
@@ -486,17 +572,6 @@ function renderSprintPlanningBoard(
         }).open()
     })
 
-    // Callback for assignee filter
-    const onFilterClick = (displayName: string): void => {
-        // Toggle filter: if same assignee clicked, clear filter
-        if (filterState.assignee === displayName) {
-            filterState.assignee = null
-        } else {
-            filterState.assignee = displayName
-        }
-        applyAssigneeFilter(board, filterState)
-    }
-
     // Capacity Section
     if (filteredSprintIssues.length > 0) {
         const capacitySection = createDiv({ cls: 'ji-sprint-planning-capacity', parent: board })
@@ -520,10 +595,7 @@ function renderSprintPlanningBoard(
         const capacityCards = createDiv({ cls: 'ji-capacity-cards', parent: capacitySection })
 
         for (const stats of capacityStats) {
-            capacityCards.appendChild(renderCapacityCard(stats, view, (displayName) => {
-                onFilterClick(displayName)
-                clearFilterBtn.style.display = filterState.assignee ? 'inline-block' : 'none'
-            }))
+            capacityCards.appendChild(renderCapacityCard(stats, view, onFilterClick))
         }
 
         // Total summary

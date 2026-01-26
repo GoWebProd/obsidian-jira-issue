@@ -2668,3 +2668,134 @@ svg.svg-icon.jira-issue-hidden {
 .ji-filter-clear-btn:hover {
     background-color: var(--interactive-accent-hover, #5c4db3);
 }
+
+/* Sprint Card Status */
+.ji-sprint-card-status {
+    margin-bottom: 6px;
+}
+
+.ji-sprint-card-status .ji-tag {
+    font-size: 0.7em;
+    padding: 2px 6px;
+}
+
+/* Estimation Modal */
+.jira-estimation-modal {
+    max-width: 400px;
+}
+
+.jira-estimation-modal h2 {
+    margin-bottom: 16px;
+}
+
+.jira-estimation-current {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.jira-estimation-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.jira-estimation-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    min-width: 48px;
+    font-size: 14px;
+    transition: all 0.15s ease;
+}
+
+.jira-estimation-btn:hover {
+    background: var(--background-modifier-hover);
+}
+
+.jira-estimation-btn.is-selected {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-color: var(--interactive-accent);
+}
+
+.jira-estimation-custom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.jira-estimation-custom-input,
+.jira-estimation-numeric-input {
+    width: 100px;
+    padding: 6px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+}
+
+.jira-estimation-numeric {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.jira-estimation-buttons-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.jira-estimation-btn-cancel {
+    padding: 8px 16px;
+    border: 1px solid var(--background-modifier-border);
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.jira-estimation-btn-clear {
+    padding: 8px 16px;
+    border: 1px solid var(--background-modifier-border);
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.jira-estimation-btn-clear:hover {
+    background: var(--background-modifier-hover);
+}
+
+.jira-estimation-btn-save {
+    padding: 8px 16px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.jira-estimation-btn-save:hover {
+    opacity: 0.9;
+}
+
+.jira-estimation-warning {
+    background: rgba(255, 171, 0, 0.1);
+    border-left: 3px solid #ffab00;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.jira-estimation-warning-hint {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-top: 8px;
+}
