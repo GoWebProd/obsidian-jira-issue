@@ -15,6 +15,7 @@ export class SprintPlanningView {
     hoursPerDay: number = 8
     capacity: ICapacityConfig = {}
     excludeTypes: string[] = []  // Issue types to exclude (e.g., ['Epic', 'Story'])
+    excludeStatuses: string[] = []  // Statuses to exclude (e.g., ['Closed', 'Done'])
     private _cacheKey: string = null
 
     static fromString(source: string): SprintPlanningView {
@@ -88,6 +89,10 @@ export class SprintPlanningView {
                     // Parse comma-separated list of issue types to exclude
                     view.excludeTypes = value.split(',').map(t => t.trim()).filter(t => t.length > 0)
                     break
+                case 'excludestatuses':
+                    // Parse comma-separated list of statuses to exclude
+                    view.excludeStatuses = value.split(',').map(s => s.trim()).filter(s => s.length > 0)
+                    break
             }
         }
 
@@ -125,6 +130,10 @@ export class SprintPlanningView {
 
         if (this.excludeTypes.length > 0) {
             result += `excludetypes: ${this.excludeTypes.join(', ')}\n`
+        }
+
+        if (this.excludeStatuses.length > 0) {
+            result += `excludestatuses: ${this.excludeStatuses.join(', ')}\n`
         }
 
         if (Object.keys(this.capacity).length > 0) {
