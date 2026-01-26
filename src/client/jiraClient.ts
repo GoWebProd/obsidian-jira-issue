@@ -991,4 +991,52 @@ export default {
             }
         ) as IJiraSprint
     },
+
+    /**
+     * Update a single issue field (generic method)
+     */
+    async updateIssueField(
+        issueKey: string,
+        fieldName: string,
+        value: unknown,
+        options: { account?: IJiraIssueAccountSettings } = {}
+    ): Promise<void> {
+        await sendRequest({
+            method: 'PUT',
+            path: `/issue/${issueKey}`,
+            account: options.account || null,
+            body: { fields: { [fieldName]: value } }
+        })
+    },
+
+    /**
+     * Update issue time tracking (originalEstimate or remainingEstimate)
+     * Time tracking fields require special structure via timetracking object
+     */
+    async updateIssueTimeTracking(
+        issueKey: string,
+        fieldName: string,
+        value: string | null,
+        options: { account?: IJiraIssueAccountSettings } = {}
+    ): Promise<void> {
+        // Map field names to timetracking object keys
+        const timetrackingKey = fieldName === 'timeoriginalestimate' || fieldName === 'aggregatetimeoriginalestimate'
+            ? 'originalEstimate'
+            : 'remainingEstimate'
+
+        const body = {
+            fields: {
+                timetracking: {
+                    [timetrackingKey]: value
+                }
+            }
+        }
+        console.log('JiraIssue: updateIssueTimeTracking request:', issueKey, JSON.stringify(body, null, 2))
+        await sendRequest({
+            method: 'PUT',
+            path: `/issue/${issueKey}`,
+            account: options.account || null,
+            body: body
+        })
+    },
 }

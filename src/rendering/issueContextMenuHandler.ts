@@ -1,10 +1,16 @@
 import { Menu } from "obsidian"
 import { IJiraIssue } from "../interfaces/issueInterfaces"
 import { AssigneeModal } from "../modals/assigneeModal"
+import { EstimationModal } from "../modals/estimationModal"
 import { LabelManagementModal } from "../modals/labelManagementModal"
 import { PeopleFieldsModal } from "../modals/peopleFieldsModal"
 import { PriorityModal } from "../modals/priorityModal"
 import { TransitionModal } from "../modals/transitionModal"
+
+export interface IssueContextMenuOptions {
+    /** Preferred estimation field ID (e.g., 'timeoriginalestimate', 'customfield_10016') */
+    estimationField?: string
+}
 
 /**
  * Attaches a context menu (right-click) handler to an issue element.
@@ -13,7 +19,8 @@ import { TransitionModal } from "../modals/transitionModal"
 export function attachIssueContextMenuHandler(
     element: HTMLElement,
     issue: IJiraIssue,
-    onIssueUpdated: (issue: IJiraIssue) => void
+    onIssueUpdated: (issue: IJiraIssue) => void,
+    options?: IssueContextMenuOptions
 ): void {
     element.addEventListener('contextmenu', (event: MouseEvent) => {
         event.preventDefault()
@@ -62,6 +69,14 @@ export function attachIssueContextMenuHandler(
             .setIcon('arrow-right-circle')
             .onClick(() => {
                 new TransitionModal(issue, onIssueUpdated).open()
+            })
+        )
+
+        menu.addItem(item => item
+            .setTitle('Change estimation')
+            .setIcon('hash')
+            .onClick(() => {
+                new EstimationModal(issue, onIssueUpdated, options?.estimationField).open()
             })
         )
 
